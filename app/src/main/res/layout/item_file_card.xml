@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="90dp"
+    android:layout_height="110dp"
+    android:layout_margin="6dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:strokeColor="#F48FB1"
+    app:strokeWidth="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp">
+
+<!-- Заглушка для картинки -->
+<View
+    android:id="@+id/ivFilePreview"
+    android:layout_width="50dp"
+    android:layout_height="50dp"
+    android:background="#E0E0E0"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent" />
+
+<!-- Имя файла -->
+<TextView
+    android:id="@+id/tvFileName"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:text="кот"
+    android:textAppearance="@style/TextAppearance.Trace.Body"
+    android:textSize="12sp"
+    android:textStyle="bold"
+    android:textColor="#333333"
+    app:layout_constraintTop_toBottomOf="@id/ivFilePreview"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent" />
+
+<!-- Подпись "подробнее..." -->
+<TextView
+    android:id="@+id/tvMore"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="2dp"
+    android:text="подробнее..."
+    android:textSize="10sp"
+    android:textColor="#9E9E9E"
+    android:fontFamily="@font/comfortaa_semibold"
+    app:layout_constraintTop_toBottomOf="@id/tvFileName"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
