@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // 1. Безопасный поиск панели навигации
-        val bottomNavContainer = findViewById<View>(R.id.bottomNavInclude)
+        val bottomNavContainer = findViewById<View>(R.id.bottomNavigationView)
         val bottomNav = bottomNavContainer?.findViewById<BottomNavigationView>(R.id.bottomNavigationView)
 
         // Применяем отступы (чтобы панель не уезжала под системные кнопки)
