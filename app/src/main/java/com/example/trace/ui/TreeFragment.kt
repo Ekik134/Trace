@@ -1,4 +1,4 @@
-package com.example.trace
+package com.example.trace.ui
 
 import android.os.Bundle
 import android.view.Gravity

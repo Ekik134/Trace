@@ -11,4 +11,6 @@
     app:itemTextColor="@color/bottom_nav_color_selector"
     app:labelVisibilityMode="labeled"
     app:menu="@menu/bottom_nav_menu"
-    app:itemIconSize="24dp" />
+    app:itemIconSize="24dp"
+    android:clickable="true"
+    android:focusable="true"/>

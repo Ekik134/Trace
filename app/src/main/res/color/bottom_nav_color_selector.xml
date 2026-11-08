@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Цвет активного таба (например, розовый, как на скриншотах) -->
     <item android:color="#F48FB1" android:state_checked="true" />
-    <!-- Цвет неактивного таба (серый) -->
     <item android:color="#9E9E9E" />
 </selector>

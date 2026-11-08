@@ -1,11 +1,9 @@
 package com.example.trace
 
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -14,37 +12,24 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 1. Безопасный поиск панели навигации
-        val bottomNavContainer = findViewById<View>(R.id.bottomNavigationView)
-        val bottomNav = bottomNavContainer?.findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
 
-        // Применяем отступы (чтобы панель не уезжала под системные кнопки)
-        ViewCompat.setOnApplyWindowInsetsListener(bottomNavContainer) { view, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(0, 0, 0, systemBars.bottom)
-            insets
-        }
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
 
-        // 2. Настраиваем слушатель только если панель найдена
-        bottomNav?.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> { loadFragment(HomeFragment()); true }
-                R.id.nav_tree -> { loadFragment(TreeFragment()); true }
-                R.id.nav_tags -> { loadFragment(TagsFragment()); true }
-                R.id.nav_profile -> { loadFragment(ProfileFragment()); true }
-                else -> false
+        // Связываем BottomNavigationView с NavController.
+        // NavController сам поймет, что находится внутри вложенного графа mainGraph
+        bottomNav.setupWithNavController(navController)
+
+        // Опционально: скрывать панель навигации на экранах Start/Onboarding/Editors
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            when (destination.id) {
+                R.id.startFragment, R.id.onboardingFragment,
+                R.id.fileDetailFragment, R.id.fileEditorFragment,
+                R.id.tagEditorFragment -> bottomNav.visibility = android.view.View.GONE
+                else -> bottomNav.visibility = android.view.View.VISIBLE
             }
         }
-
-        // 3. Открываем Главную при первом запуске
-        if (savedInstanceState == null) {
-            loadFragment(HomeFragment())
-        }
-    }
-
-    private fun loadFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .commit()
     }
 }

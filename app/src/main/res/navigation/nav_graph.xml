@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/startFragment">
+
+    <!-- 1. Стартовый экран (SCR-01) -->
+    <fragment
+        android:id="@+id/startFragment"
+        android:name="com.example.trace.ui.StartFragment"
+        android:label="Start"
+        tools:layout="@layout/fragment_start">
+        <!-- Переход на онбординг, если пользователь новый -->
+        <action
+            android:id="@+id/action_startFragment_to_onboardingFragment"
+            app:destination="@id/onboardingFragment"
+            app:popUpTo="@id/startFragment"
+            app:popUpToInclusive="true" />
+        <!-- Переход на главную, если пользователь уже знаком -->
+        <action
+            android:id="@+id/action_startFragment_to_mainGraph"
+            app:destination="@id/mainGraph"
+            app:popUpTo="@id/startFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- 2. Экран знакомства (SCR-02) -->
+    <fragment
+        android:id="@+id/onboardingFragment"
+        android:name="com.example.trace.ui.OnboardingFragment"
+        android:label="Onboarding"
+        tools:layout="@layout/fragment_onboarding">
+        <action
+            android:id="@+id/action_onboardingFragment_to_mainGraph"
+            app:destination="@id/mainGraph"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- 3. Вложенный граф для нижней навигации (BottomNavigationView) -->
+    <!-- Все экраны этой группы имеют общую нижнюю панель -->
+    <navigation
+        android:id="@+id/mainGraph"
+        app:startDestination="@id/homeFragment">
+
+        <!-- Вкладка "Главная" (SCR-03) -->
+        <fragment
+            android:id="@+id/homeFragment"
+            android:name="com.example.trace.ui.HomeFragment"
+            android:label="Home"
+            tools:layout="@layout/fragment_home">
+            <action
+                android:id="@+id/action_homeFragment_to_fileEditorFragment"
+                app:destination="@id/fileEditorFragment" />
+            <action
+                android:id="@+id/action_homeFragment_to_treeFragment"
+                app:destination="@id/treeFragment" />
+        </fragment>
+
+        <!-- Вкладка "Дерево" (SCR-06) -->
+        <fragment
+            android:id="@+id/treeFragment"
+            android:name="com.example.trace.ui.TreeFragment"
+            android:label="Tree"
+            tools:layout="@layout/fragment_tree">
+            <!-- Переход в редактор тега при клике на узел дерева -->
+            <action
+                android:id="@+id/action_treeFragment_to_tagEditorFragment"
+                app:destination="@id/tagEditorFragment" />
+        </fragment>
+
+        <!-- Вкладка "Теги" (SCR-04) -->
+        <fragment
+            android:id="@+id/tagsFragment"
+            android:name="com.example.trace.ui.TagsFragment"
+            android:label="Tags"
+            tools:layout="@layout/fragment_tags">
+            <!-- Переход в редактор тега при клике на тег -->
+            <action
+                android:id="@+id/action_tagsFragment_to_tagEditorFragment"
+                app:destination="@id/tagEditorFragment" />
+        </fragment>
+
+        <!-- Вкладка "Профиль" (SCR-08) -->
+        <fragment
+            android:id="@+id/profileFragment"
+            android:name="com.example.trace.ui.ProfileFragment"
+            android:label="Profile"
+            tools:layout="@layout/fragment_profile" />
+
+        <!-- Вкладка "Файлы" (SCR-??) - если она есть отдельно от главной -->
+        <fragment
+            android:id="@+id/filesFragment"
+            android:name="com.example.trace.ui.FilesFragment"
+            android:label="Files"
+            tools:layout="@layout/fragment_files">
+            <action
+                android:id="@+id/action_filesFragment_to_fileDetailFragment"
+                app:destination="@id/fileDetailFragment" />
+            <action
+                android:id="@+id/action_filesFragment_to_fileEditorFragment"
+                app:destination="@id/fileEditorFragment" />
+        </fragment>
+    </navigation>
+
+    <!-- 4. Экраны, открывающиеся ПОВЕРХ нижней навигации (Full Screen) -->
+
+    <!-- Детали файла (SCR-09) -->
+    <fragment
+        android:id="@+id/fileDetailFragment"
+        android:name="com.example.trace.ui.FileDetailFragment"
+        android:label="File Detail"
+        tools:layout="@layout/fragment_file_detail">
+        <action
+            android:id="@+id/action_fileDetailFragment_to_fileEditorFragment"
+            app:destination="@id/fileEditorFragment" />
+        <!-- Возврат назад -->
+        <action
+            android:id="@+id/action_fileDetailFragment_to_filesFragment"
+            app:destination="@id/filesFragment"
+            app:popUpTo="@id/filesFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Редактор файла / Добавление (SCR-10) -->
+    <fragment
+        android:id="@+id/fileEditorFragment"
+        android:name="com.example.trace.ui.FileEditorFragment"
+        android:label="File Editor"
+        tools:layout="@layout/fragment_file_editor">
+        <!-- Возврат на главную после сохранения -->
+        <action
+            android:id="@+id/action_fileEditorFragment_to_homeFragment"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Редактор тега (SCR-11) -->
+    <fragment
+        android:id="@+id/tagEditorFragment"
+        android:name="com.example.trace.ui.TagEditorFragment"
+        android:label="Tag Editor"
+        tools:layout="@layout/fragment_tag_editor">
+        <!-- Возврат назад (можно использовать navigateUp) -->
+    </fragment>
+
+<!--    &lt;!&ndash; Экран ошибки (SCR-12) как Dialog &ndash;&gt;-->
+<!--    <dialog-->
+<!--        android:id="@+id/errorDialogFragment"-->
+<!--        android:name="com.example.trace.ui.common.ErrorDialog"-->
+<!--        android:label="Error Dialog" />-->
+
+</navigation>

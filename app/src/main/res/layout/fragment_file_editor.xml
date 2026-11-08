@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_main_gradient"> <!-- Фон диалога/экрана -->
+
+    <!-- Карточка -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="24dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="24dp">
+
+            <!-- Заголовок -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Редактирование"
+                android:textColor="#333333"
+                android:textSize="22sp"
+                android:fontFamily="@font/comfortaa_semibold"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <!-- Кнопка закрытия (крестик) -->
+            <ImageButton
+                android:id="@+id/btnClose"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                app:tint="#B0BEC5"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Разделитель -->
+            <View
+                android:id="@+id/titleDivider"
+                android:layout_width="100dp"
+                android:layout_height="4dp"
+                android:layout_marginTop="4dp"
+                android:background="#90CAF9"
+                app:layout_constraintTop_toBottomOf="@id/tvTitle"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <!-- Поле: Название -->
+            <TextView
+                android:id="@+id/tvNameLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Название"
+                android:textColor="#333333"
+                android:textSize="18sp"
+                android:fontFamily="@font/comfortaa_semibold"
+                app:layout_constraintTop_toBottomOf="@id/titleDivider"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <!-- Используем AppCompatEditText для корректного применения вашего bg_input_field -->
+            <androidx.appcompat.widget.AppCompatEditText
+                android:id="@+id/etName"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_input_field"
+                android:fontFamily="@font/comfortaa_semibold"
+                android:hint="название..."
+                android:paddingHorizontal="16dp"
+                android:textColor="#333333"
+                android:textColorHint="#B0BEC5"
+                android:textSize="16sp"
+                app:layout_constraintTop_toBottomOf="@id/tvNameLabel" />
+
+            <!-- Поле: Описание -->
+            <TextView
+                android:id="@+id/tvDescLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Описание"
+                android:textColor="#333333"
+                android:textSize="18sp"
+                android:fontFamily="@font/comfortaa_semibold"
+                app:layout_constraintTop_toBottomOf="@id/etName"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <androidx.appcompat.widget.AppCompatEditText
+                android:id="@+id/etDescription"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_input_field"
+                android:fontFamily="@font/comfortaa_semibold"
+                android:gravity="top|start"
+                android:hint="описание..."
+                android:inputType="textMultiLine"
+                android:padding="16dp"
+                android:textColor="#333333"
+                android:textColorHint="#B0BEC5"
+                android:textSize="16sp"
+                app:layout_constraintTop_toBottomOf="@id/tvDescLabel" />
+
+            <!-- Блок тегов -->
+            <TextView
+                android:id="@+id/tvTagsLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Теги:"
+                android:textColor="#333333"
+                android:textSize="18sp"
+                android:fontFamily="@font/comfortaa_semibold"
+                app:layout_constraintTop_toBottomOf="@id/etDescription"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <!-- ChipGroup для тегов -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupTags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="8dp"
+                app:layout_constraintTop_toBottomOf="@id/tvTagsLabel" />
+
+            <!-- Кнопка Удалить (слева) -->
+            <!-- AppCompatButton позволяет применить ваш бэкграунд без Material-теней -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnDelete"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/bg_button_pink"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="24dp"
+                android:text="Удалить"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:stateListAnimator="@null"
+                app:layout_constraintTop_toBottomOf="@id/chipGroupTags"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <!-- Кнопка Сохранить -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnSave"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/bg_button_green"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="32dp"
+                android:text="Сохранить"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:stateListAnimator="@null"
+                app:layout_constraintTop_toBottomOf="@id/btnDelete"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Кнопка Отмена -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnCancel"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_button_red"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="32dp"
+                android:text="Отмена"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:stateListAnimator="@null"
+                app:layout_constraintTop_toBottomOf="@id/btnSave"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+</androidx.constraintlayout.widget.ConstraintLayout>
