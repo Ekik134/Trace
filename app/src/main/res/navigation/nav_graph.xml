@@ -50,12 +50,17 @@
             android:name="com.example.trace.ui.HomeFragment"
             android:label="Home"
             tools:layout="@layout/fragment_home">
+
             <action
                 android:id="@+id/action_homeFragment_to_fileEditorFragment"
                 app:destination="@id/fileEditorFragment" />
             <action
                 android:id="@+id/action_homeFragment_to_treeFragment"
                 app:destination="@id/treeFragment" />
+            <action
+                android:id="@+id/action_homeFragment_to_filesFragment"
+                app:destination="@id/filesFragment" />
+
         </fragment>
 
         <!-- Вкладка "Дерево" (SCR-06) -->

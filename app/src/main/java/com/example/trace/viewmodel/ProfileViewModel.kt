@@ -3,33 +3,21 @@ package com.example.trace.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.trace.data.local.AppDatabase
 import com.example.trace.data.preferences.UserPreferences
 import com.example.trace.data.repository.FileRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
-class ProfileViewModel(
-    application: Application,
-    private val fileRepository: FileRepository // Внедряем через DI (Hilt/Koin) или создаем вручную
-) : AndroidViewModel(application) {
+class ProfileViewModel(application: Application) : AndroidViewModel(application) {
+    private val db = AppDatabase.getDatabase(application)
+    private val repository = FileRepository(application, db.fileDao(), db.tagDao())
+    private val userPreferences = UserPreferences(application)
 
-    private val userPreferences = UserPreferences(application.applicationContext)
-
-    // 1. Имя пользователя из DataStore
     val userName: StateFlow<String> = userPreferences.userNameFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "Загрузка..."
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Загрузка...")
 
-    // 2. Количество файлов из Room (SQLite)
-    val fileCount: StateFlow<Int> = fileRepository.getFilesCount()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 0
-        )
+    val fileCount: StateFlow<Int> = repository.getFilesCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 }

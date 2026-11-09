@@ -17,14 +17,15 @@
     android:padding="8dp">
 
 <!-- Заглушка для картинки -->
-<View
-    android:id="@+id/ivFilePreview"
-    android:layout_width="50dp"
-    android:layout_height="50dp"
-    android:background="#E0E0E0"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent" />
+        <ImageView
+            android:id="@+id/ivFilePreview"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="#E0E0E0"
+            android:scaleType="centerCrop"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
 <!-- Имя файла -->
 <TextView

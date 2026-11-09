@@ -6,15 +6,18 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.trace.R
-import com.example.trace.data.preferences.UserPreferences
-import kotlinx.coroutines.flow.first
+import com.example.trace.ui.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
 
 class ProfileFragment : Fragment() {
 
-    private lateinit var userPreferences: UserPreferences
+    // 1. Инициализируем ViewModel
+    private val viewModel: ProfileViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -27,27 +30,27 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        userPreferences = UserPreferences(requireContext())
-
         val tvUserName = view.findViewById<TextView>(R.id.tvUserName)
         val tvFileCount = view.findViewById<TextView>(R.id.tvFileCount)
 
-        // 1. Загрузка имени из DataStore
+        // 2. Подписка на данные через lifecycleScope и collect
         viewLifecycleOwner.lifecycleScope.launch {
-            val name = userPreferences.userNameFlow.first()
-            tvUserName.text = if (name.isNotBlank()) name else "Пользователь"
-        }
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
-        // 2. Загрузка количества файлов из Room (SQLite)
-        // Вам нужен экземпляр БД (например, через ViewModel).
-        // Примерная логика (псевдокод):
-        /*
-        viewModel.fileCount.observe(viewLifecycleOwner) { count ->
-            tvFileCount.text = count.toString()
-        }
-        */
+                // Слушаем имя
+                launch {
+                    viewModel.userName.collect { name ->
+                        tvUserName.text = name
+                    }
+                }
 
-        // Пока заглушка, как в XML:
-        tvFileCount.text = "0"
+                // Слушаем количество файлов
+                launch {
+                    viewModel.fileCount.collect { count ->
+                        tvFileCount.text = count.toString()
+                    }
+                }
+            }
+        }
     }
 }
