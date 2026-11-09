@@ -57,6 +57,16 @@
                 app:layout_constraintTop_toBottomOf="@id/tvTitle"
                 app:layout_constraintStart_toStartOf="parent" />
 
+            <ImageView
+                android:id="@+id/ivFilePreview"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="16dp"
+                android:background="#F0F0F0"
+                android:scaleType="centerCrop"
+                app:layout_constraintTop_toBottomOf="@id/titleDivider" />
+
             <!-- Поле: Название -->
             <TextView
                 android:id="@+id/tvNameLabel"
@@ -67,7 +77,7 @@
                 android:textColor="#333333"
                 android:textSize="18sp"
                 android:fontFamily="@font/comfortaa_semibold"
-                app:layout_constraintTop_toBottomOf="@id/titleDivider"
+                app:layout_constraintTop_toBottomOf="@id/ivFilePreview"
                 app:layout_constraintStart_toStartOf="parent" />
 
             <!-- Используем AppCompatEditText для корректного применения вашего bg_input_field -->
@@ -156,44 +166,49 @@
                 app:layout_constraintTop_toBottomOf="@id/chipGroupTags"
                 app:layout_constraintStart_toStartOf="parent" />
 
-            <!-- Кнопка Сохранить -->
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnSave"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
+            <LinearLayout
+                android:id="@+id/buttonsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:background="@drawable/bg_button_green"
-                android:minHeight="0dp"
-                android:minWidth="0dp"
-                android:paddingHorizontal="32dp"
-                android:text="Сохранить"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:stateListAnimator="@null"
+                android:orientation="horizontal"
+                android:gravity="center"
                 app:layout_constraintTop_toBottomOf="@id/btnDelete"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
+                app:layout_constraintBottom_toBottomOf="parent">
 
-            <!-- Кнопка Отмена -->
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnCancel"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_button_red"
-                android:minHeight="0dp"
-                android:minWidth="0dp"
-                android:paddingHorizontal="32dp"
-                android:text="Отмена"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:stateListAnimator="@null"
-                app:layout_constraintTop_toBottomOf="@id/btnSave"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
+                <!-- Кнопка Сохранить -->
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnSave"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_button_green"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:stateListAnimator="@null"
+                    android:text="Сохранить"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+                <!-- Кнопка Отмена -->
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnCancel"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_button_red"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:stateListAnimator="@null"
+                    android:text="Отмена"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>

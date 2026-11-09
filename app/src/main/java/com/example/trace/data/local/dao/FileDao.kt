@@ -21,6 +21,9 @@ interface FileDao {
     @Query("SELECT * FROM files WHERE name LIKE '%' || :query || '%' ORDER BY createdAt DESC")
     fun searchFiles(query: String): Flow<List<FileEntity>>
 
+    @Query("SELECT COUNT(*) FROM files")
+    fun getFilesCount(): Flow<Int>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFile(file: FileEntity): Long
 

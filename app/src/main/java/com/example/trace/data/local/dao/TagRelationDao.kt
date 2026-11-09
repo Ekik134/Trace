@@ -30,4 +30,15 @@ interface TagRelationDao {
     // Очистить все связи для тега (если тег удаляется)
     @Query("DELETE FROM tag_hierarchy WHERE ancestorId = :tagId OR descendantId = :tagId")
     suspend fun clearRelationsForTag(tagId: Long)
+
+    @Query("""
+    WITH RECURSIVE descendants(id) AS (
+        SELECT descendantId FROM tag_hierarchy WHERE ancestorId = :childId
+        UNION
+        SELECT th.descendantId FROM tag_hierarchy th
+        INNER JOIN descendants d ON th.ancestorId = d.id
+    )
+    SELECT EXISTS(SELECT 1 FROM descendants WHERE id = :parentId)
+""")
+    suspend fun isDescendant(childId: Long, parentId: Long): Boolean
 }
