@@ -135,8 +135,46 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             }
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.deleteSuccess.collect {
+                    Toast.makeText(requireContext(), "Тег удален", Toast.LENGTH_SHORT).show()
+                    findNavController().navigateUp()
+                }
+            }
+        }
+
+        btnDelete.setOnClickListener {
+            // Показываем диалог подтверждения, чтобы не удалить случайно
+            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Удалить тег?")
+                .setMessage("Вы уверены? Все связи с этим тегом также будут удалены.")
+                .setPositiveButton("Удалить") { _, _ ->
+                    editTagId?.let { id ->
+                        deleteTagAndClose(id)
+                    }
+                }
+                .setNegativeButton("Отмена", null)
+                .show()
+        }
+
         btnCancel.setOnClickListener { findNavController().navigateUp() }
         btnClose.setOnClickListener { findNavController().navigateUp() }
+    }
+
+
+    private fun deleteTagAndClose(tagId: Long) {
+        // 1. Подписываемся на событие успешного удаления
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.deleteSuccess.collect {
+                    Toast.makeText(requireContext(), "Тег удален", Toast.LENGTH_SHORT).show()
+                    findNavController().navigateUp()
+                }
+            }
+        }
+        // 2. Вызываем удаление во ViewModel
+        viewModel.deleteTag(tagId)
     }
 
     private fun createTagChip(tag: TagModel, onRemove: () -> Unit): Chip {

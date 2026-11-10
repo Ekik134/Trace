@@ -34,6 +34,10 @@ class TagEditorViewModel(application: Application) : AndroidViewModel(applicatio
     private val _errorEvent = MutableSharedFlow<String>()
     val errorEvent: SharedFlow<String> = _errorEvent.asSharedFlow()
 
+    private val _deleteSuccess = MutableSharedFlow<Unit>()
+    val deleteSuccess: SharedFlow<Unit> = _deleteSuccess.asSharedFlow()
+
+
     fun loadTag(tagId: Long) {
         viewModelScope.launch {
             _currentTag.value = repository.getTagById(tagId)
@@ -77,6 +81,17 @@ class TagEditorViewModel(application: Application) : AndroidViewModel(applicatio
                 refreshRelations(parentId) // parentId - это текущий тег
             }.onFailure { error ->
                 _errorEvent.emit(error.message ?: "Ошибка связи")
+            }
+        }
+    }
+
+    fun deleteTag(tagId: Long) {
+        viewModelScope.launch {
+            val result = repository.deleteTag(tagId)
+            result.onSuccess {
+                _deleteSuccess.emit(Unit) // Сообщаем фрагменту об успехе
+            }.onFailure { error ->
+                _errorEvent.emit(error.message ?: "Ошибка удаления")
             }
         }
     }
