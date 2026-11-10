@@ -16,52 +16,32 @@ class TagRepository(
 
     // --- ПОЛУЧЕНИЕ ДАННЫХ ---
 
-    /**
-     * Получить все теги в виде Flow для реактивного обновления UI
-     */
     fun getAllTags(): Flow<List<TagModel>> {
         return tagDao.getAllTags().map { entities ->
             entities.map { it.toModel() }
         }
     }
 
-    /**
-     * Получить теги с количеством привязанных к ним файлов (для экрана Тегов / Древа)
-     */
     fun getTagsWithFileCount(): Flow<List<TagModel>> {
         return tagDao.getTagsWithFileCount().map { list ->
-            list.map {
-                it.tag.toModel(fileCount = it.fileCount)
-            }
+            list.map { it.tag.toModel(fileCount = it.fileCount) }
         }
     }
 
-    /**
-     * Поиск тегов по названию
-     */
     fun searchTags(query: String): Flow<List<TagModel>> {
         return tagDao.searchTags(query).map { entities ->
             entities.map { it.toModel() }
         }
     }
 
-    /**
-     * Получить конкретный тег по ID
-     */
     suspend fun getTagById(tagId: Long): TagModel? {
         return tagDao.getTagById(tagId)?.toModel()
     }
 
-    /**
-     * Получить все связи (иерархию) для построения древа
-     */
     fun getAllRelations(): Flow<List<TagRelationEntity>> {
         return tagRelationDao.getAllRelations()
     }
 
-    /**
-     * Получить родителей (теги, в которые входит текущий)
-     */
     suspend fun getParentsOf(tagId: Long): List<TagModel> {
         val parentRelations = tagRelationDao.getParentsOf(tagId)
         return parentRelations.mapNotNull { relation ->
@@ -69,9 +49,6 @@ class TagRepository(
         }
     }
 
-    /**
-     * Получить детей (теги, которые включает текущий)
-     */
     suspend fun getChildrenOf(tagId: Long): List<TagModel> {
         val childRelations = tagRelationDao.getChildrenOf(tagId)
         return childRelations.mapNotNull { relation ->
@@ -81,9 +58,6 @@ class TagRepository(
 
     // --- СОЗДАНИЕ И РЕДАКТИРОВАНИЕ ---
 
-    /**
-     * Создать новый тег
-     */
     suspend fun createTag(name: String, iconUri: String? = null): Result<Long> {
         return try {
             val tag = TagEntity(name = name, iconUri = iconUri)
@@ -94,9 +68,6 @@ class TagRepository(
         }
     }
 
-    /**
-     * Обновить существующий тег
-     */
     suspend fun updateTag(tag: TagModel): Result<Unit> {
         return try {
             tagDao.updateTag(
@@ -108,9 +79,6 @@ class TagRepository(
         }
     }
 
-    /**
-     * Удалить тег (вместе со всеми его связями)
-     */
     suspend fun deleteTag(tagId: Long): Result<Unit> {
         return try {
             val tag = tagDao.getTagById(tagId)
@@ -128,8 +96,8 @@ class TagRepository(
 
     /**
      * Добавить связь между тегами с полной валидацией
-     * @param parentId ID родительского тега ("Включает в себя")
-     * @param childId ID дочернего тега ("Входит в")
+     * @param parentId ID родительского тега (Включает в себя)
+     * @param childId ID дочернего тега (Входит в)
      */
     suspend fun addRelation(parentId: Long, childId: Long): Result<Unit> {
         // 1. Защита: Нельзя связать тег с самим собой
@@ -137,13 +105,18 @@ class TagRepository(
             return Result.failure(Exception("Тег не может быть родителем самому себе"))
         }
 
-        // 2. Защита: Проверка на создание цикла (например, А -> Б -> А)
-        // Если childId уже является предком parentId, то добавление связи создаст петлю.
+        // 2. Защита: Проверка на создание цикла (А -> Б -> А)
         if (tagRelationDao.isDescendant(childId = parentId, parentId = childId)) {
-            return Result.failure(Exception("Невозможно добавить связь: это создаст цикл в древе"))
+            return Result.failure(Exception("Невозможно добавить связь."))
         }
 
-        // 3. Вставка (OnConflictStrategy.IGNORE защитит от дубликатов)
+        // 3. Защита от дубликатов (если связь уже существует)
+        val existingParents = tagRelationDao.getParentsOf(childId)
+        if (existingParents.any { it.ancestorId == parentId }) {
+            return Result.failure(Exception("Этот тег уже добавлен в связи"))
+        }
+
+        // 4. Вставка
         return try {
             tagRelationDao.insertRelation(TagRelationEntity(parentId, childId))
             Result.success(Unit)
@@ -152,9 +125,6 @@ class TagRepository(
         }
     }
 
-    /**
-     * Удалить связь между тегами
-     */
     suspend fun removeRelation(parentId: Long, childId: Long): Result<Unit> {
         return try {
             val relation = TagRelationEntity(parentId, childId)
@@ -165,7 +135,7 @@ class TagRepository(
         }
     }
 
-    // --- МАППИНГ (Entity -> Model) ---
+    // --- МАППИНГ ---
 
     private fun TagEntity.toModel(fileCount: Int = 0): TagModel {
         return TagModel(

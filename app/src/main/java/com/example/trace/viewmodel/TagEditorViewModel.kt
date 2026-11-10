@@ -22,7 +22,6 @@ class TagEditorViewModel(application: Application) : AndroidViewModel(applicatio
     private val _currentTag = MutableStateFlow<TagModel?>(null)
     val currentTag: StateFlow<TagModel?> = _currentTag.asStateFlow()
 
-    // Списки связей
     private val _parents = MutableStateFlow<List<TagModel>>(emptyList())
     val parents: StateFlow<List<TagModel>> = _parents.asStateFlow()
 
@@ -32,16 +31,21 @@ class TagEditorViewModel(application: Application) : AndroidViewModel(applicatio
     private val _saveSuccess = MutableSharedFlow<Unit>()
     val saveSuccess: SharedFlow<Unit> = _saveSuccess.asSharedFlow()
 
-    // Событие для показа ошибки (например, цикл)
     private val _errorEvent = MutableSharedFlow<String>()
     val errorEvent: SharedFlow<String> = _errorEvent.asSharedFlow()
 
     fun loadTag(tagId: Long) {
         viewModelScope.launch {
             _currentTag.value = repository.getTagById(tagId)
-            _parents.value = repository.getParentsOf(tagId)
-            _children.value = repository.getChildrenOf(tagId)
+            // Принудительно перезагружаем списки
+            refreshRelations(tagId)
         }
+    }
+
+    // Вспомогательный метод для обновления связей
+    private suspend fun refreshRelations(tagId: Long) {
+        _parents.value = repository.getParentsOf(tagId)
+        _children.value = repository.getChildrenOf(tagId)
     }
 
     fun saveTag(tagId: Long?, name: String) {
@@ -55,13 +59,11 @@ class TagEditorViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    // Добавить связь (parentId включает childId)
     fun addParentRelation(parentId: Long, childId: Long) {
         viewModelScope.launch {
             val result = repository.addRelation(parentId = parentId, childId = childId)
             result.onSuccess {
-                // Обновляем списки после успешного добавления
-                _parents.value = repository.getParentsOf(childId)
+                refreshRelations(childId) // childId - это текущий тег
             }.onFailure { error ->
                 _errorEvent.emit(error.message ?: "Ошибка связи")
             }
@@ -72,20 +74,19 @@ class TagEditorViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             val result = repository.addRelation(parentId = parentId, childId = childId)
             result.onSuccess {
-                _children.value = repository.getChildrenOf(parentId)
+                refreshRelations(parentId) // parentId - это текущий тег
             }.onFailure { error ->
                 _errorEvent.emit(error.message ?: "Ошибка связи")
             }
         }
     }
 
-    fun removeRelation(parentId: Long, childId: Long) {
+    fun removeRelation(parentId: Long, childId: Long, currentTagId: Long) {
         viewModelScope.launch {
             val result = repository.removeRelation(parentId, childId)
             result.onSuccess {
-                // Обновляем оба списка
-                _parents.value = repository.getParentsOf(childId)
-                _children.value = repository.getChildrenOf(parentId)
+                // Перезагружаем оба списка для текущего тега
+                refreshRelations(currentTagId)
             }
         }
     }

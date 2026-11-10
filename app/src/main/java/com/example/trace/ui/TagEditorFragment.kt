@@ -42,7 +42,6 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
         val chipGroupParents = view.findViewById<ChipGroup>(R.id.chipGroupParents)
         val chipGroupChildren = view.findViewById<ChipGroup>(R.id.chipGroupChildren)
 
-        // Получаем ID, если это режим редактирования
         editTagId = arguments?.getLong("editTagId", -1L)?.takeIf { it != -1L }
 
         if (editTagId != null) {
@@ -54,7 +53,7 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             btnDelete.visibility = View.GONE
         }
 
-        // Подписка на загрузку имени
+        // Подписка на имя
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.currentTag.collect { tag ->
@@ -63,14 +62,14 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             }
         }
 
-        // Подписка на Родителей (Входит в)
+        // Подписка на Родителей
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.parents.collect { parents ->
-                    chipGroupParents.removeAllViews()
+                    chipGroupParents.removeAllViews() // Жесткая очистка
                     parents.forEach { parent ->
                         val chip = createTagChip(parent) {
-                            viewModel.removeRelation(parent.id, editTagId!!)
+                            viewModel.removeRelation(parent.id, editTagId!!, editTagId!!)
                         }
                         chipGroupParents.addView(chip)
                     }
@@ -78,14 +77,14 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             }
         }
 
-        // Подписка на Детей (Включает в себя)
+        // Подписка на Детей
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.children.collect { children ->
-                    chipGroupChildren.removeAllViews()
+                    chipGroupChildren.removeAllViews() // Жесткая очистка
                     children.forEach { child ->
                         val chip = createTagChip(child) {
-                            viewModel.removeRelation(editTagId!!, child.id)
+                            viewModel.removeRelation(editTagId!!, child.id, editTagId!!)
                         }
                         chipGroupChildren.addView(chip)
                     }
@@ -93,7 +92,7 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             }
         }
 
-        // Обработка кнопок "+"
+        // Обработчики кнопок "+"
         btnAddParent.setOnClickListener {
             if (editTagId == null) {
                 Toast.makeText(requireContext(), "Сначала сохраните тег", Toast.LENGTH_SHORT).show()
@@ -110,7 +109,6 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             showTagSelectionDialog(isForParent = false)
         }
 
-        // Сохранение
         btnSave.setOnClickListener {
             val name = etName.text.toString().trim()
             if (name.isEmpty()) {
@@ -120,7 +118,6 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             viewModel.saveTag(editTagId, name)
         }
 
-        // Подписка на успешное сохранение
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.saveSuccess.collect {
@@ -130,7 +127,6 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             }
         }
 
-        // Подписка на ошибки (циклы)
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.errorEvent.collect { msg ->
@@ -157,28 +153,38 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
     private fun showTagSelectionDialog(isForParent: Boolean) {
         viewLifecycleOwner.lifecycleScope.launch {
             val db = AppDatabase.getDatabase(requireContext())
-
-            // ИСПРАВЛЕНО: Правильное получение первого элемента из Flow
             val allTags = db.tagDao().getAllTags().first()
 
-            // Фильтруем: нельзя добавить себя
-            val availableTags = allTags.filter { it.id != editTagId }
-            val names = availableTags.map { it.name }.toTypedArray()
+            // Получаем ID тегов, которые уже есть в связях (и в родителях, и в детях)
+            val currentParents = viewModel.parents.value.map { it.id }
+            val currentChildren = viewModel.children.value.map { it.id }
 
-            if (names.isEmpty()) {
-                Toast.makeText(requireContext(), "Нет доступных тегов", Toast.LENGTH_SHORT).show()
+            // Объединяем их в один список, чтобы исключить из выбора
+            val allRelatedIds = (currentParents + currentChildren).toSet()
+
+            // Фильтруем:
+            // 1. Исключаем себя (editTagId)
+            // 2. Исключаем теги, которые уже есть в ЛЮБОЙ из связей (чтобы не было дублей в разных категориях)
+            val availableTags = allTags.filter { tag ->
+                tag.id != editTagId && tag.id !in allRelatedIds
+            }
+
+            if (availableTags.isEmpty()) {
+                Toast.makeText(requireContext(), "Нет доступных тегов для добавления", Toast.LENGTH_SHORT).show()
                 return@launch
             }
+
+            val names = availableTags.map { it.name }.toTypedArray()
 
             AlertDialog.Builder(requireContext())
                 .setTitle("Выберите тег")
                 .setItems(names) { _, which ->
                     val selectedTag = availableTags[which]
                     if (isForParent) {
-                        // Текущий тег входит в selectedTag
+                        // Если добавляем в Родители (Входит в)
                         viewModel.addParentRelation(parentId = selectedTag.id, childId = editTagId!!)
                     } else {
-                        // Текущий тег включает selectedTag
+                        // Если добавляем в Дети (Включает в себя)
                         viewModel.addChildRelation(parentId = editTagId!!, childId = selectedTag.id)
                     }
                 }
