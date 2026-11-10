@@ -17,56 +17,87 @@ import com.example.trace.data.local.AppDatabase
 import com.example.trace.data.local.FileStorageManager
 import com.example.trace.data.repository.FileRepository
 import kotlinx.coroutines.launch
+import java.io.File
 
 class FileEditorFragment : Fragment(R.layout.fragment_file_editor) {
 
     private lateinit var fileStorageManager: FileStorageManager
     private lateinit var fileRepository: FileRepository
 
+    // Переменные для режима создания (новый файл)
     private var selectedUri: Uri? = null
     private var selectedMimeType: String? = null
     private var selectedSize: Long? = null
     private var selectedName: String? = null
+
+    // Переменные для режима редактирования (существующий файл)
+    private var editFileId: Long = -1L
+    private var existingLocalUri: String? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val db = AppDatabase.getDatabase(requireContext())
         fileRepository = FileRepository(requireContext(), db.fileDao(), db.tagDao())
-
         fileStorageManager = FileStorageManager(requireContext())
 
-        // 1. Получаем URI из аргументов
+        val ivPreview = view.findViewById<ImageView>(R.id.ivFilePreview)
+        val etName = view.findViewById<EditText>(R.id.etName)
+        val etDescription = view.findViewById<EditText>(R.id.etDescription)
+        val btnSave = view.findViewById<Button>(R.id.btnSave)
+        val btnCancel = view.findViewById<Button>(R.id.btnCancel)
+        val btnDelete = view.findViewById<Button>(R.id.btnDelete)
+        val tvTitle = view.findViewById<android.widget.TextView>(R.id.tvTitle)
+
+        // --- РЕЖИМ 1: РЕДАКТИРОВАНИЕ (Пришел editFileId) ---
+        arguments?.getLong("editFileId", -1L)?.let { id ->
+            if (id != -1L) {
+                editFileId = id
+                tvTitle.text = "Редактирование"
+                btnDelete.visibility = View.VISIBLE // Показываем кнопку удаления
+
+                // Загружаем данные из БД
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val file = db.fileDao().getFileById(id)
+                    if (file != null) {
+                        etName.setText(file.name)
+                        etDescription.setText(file.description)
+                        existingLocalUri = file.localUri
+                        selectedMimeType = file.mimeType
+
+                        // Загружаем превью
+                        val imagePath = file.previewPath ?: file.localUri
+                        if (imagePath != null && file.mimeType?.startsWith("image/") == true) {
+                            ivPreview.load(File(imagePath))
+                        } else {
+                            ivPreview.setImageResource(R.drawable.ic_pdf_miniature)
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- РЕЖИМ 2: СОЗДАНИЕ (Пришел fileUri) ---
         arguments?.getString("fileUri")?.let { uriString ->
             selectedUri = Uri.parse(uriString)
-            extractFileMetadata(selectedUri!!)
+            tvTitle.text = "Добавление файла"
+            btnDelete.visibility = View.GONE // Скрываем кнопку удаления
 
-            val ivPreview = view.findViewById<ImageView>(R.id.ivFilePreview)
+            extractFileMetadata(selectedUri!!)
 
             if (selectedMimeType?.startsWith("image/") == true) {
                 try {
-                    // Coil v3 (если у вас старая версия, используйте import coil.load)
                     ivPreview.load(selectedUri)
                 } catch (e: Exception) {
-                    // Если не удалось загрузить картинку, ставим заглушку
                     ivPreview.setImageResource(R.drawable.ic_pdf_miniature)
                 }
             } else {
                 ivPreview.setImageResource(R.drawable.ic_pdf_miniature)
             }
-
-            // Автозаполнение названия
-            view.findViewById<EditText>(R.id.etName).setText(selectedName)
+            etName.setText(selectedName)
         }
 
-        val btnSave = view.findViewById<Button>(R.id.btnSave)
-        val btnCancel = view.findViewById<Button>(R.id.btnCancel)
-        val btnDelete = view.findViewById<Button>(R.id.btnDelete)
-        val etName = view.findViewById<EditText>(R.id.etName)
-        val etDescription = view.findViewById<EditText>(R.id.etDescription)
-
-        // Скрываем кнопку "Удалить" при создании нового файла
-        btnDelete.visibility = View.GONE
+        // --- ОБРАБОТЧИКИ КНОПОК ---
 
         btnCancel.setOnClickListener {
             findNavController().navigateUp()
@@ -81,20 +112,53 @@ class FileEditorFragment : Fragment(R.layout.fragment_file_editor) {
                 return@setOnClickListener
             }
 
-            if (selectedUri == null) {
-                Toast.makeText(requireContext(), "Файл не выбран", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+            if (editFileId != -1L) {
+                // Обновляем существующий файл
+                updateExistingFile(editFileId, name, description)
+            } else {
+                // Создаем новый файл
+                if (selectedUri == null) {
+                    Toast.makeText(requireContext(), "Файл не выбран", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                saveNewFile(name, description)
             }
+        }
 
-            saveFile(name, description)
+        btnDelete.setOnClickListener {
+            // Показываем диалог подтверждения (чтобы случайно не удалить файл)
+            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Удалить файл?")
+                .setMessage("Вы уверены, что хотите удалить этот файл? Действие нельзя отменить.")
+                .setPositiveButton("Удалить") { _, _ ->
+                    deleteCurrentFile()
+                }
+                .setNegativeButton("Отмена", null)
+                .show()
         }
     }
 
-    private fun saveFile(name: String, description: String) {
+    private fun updateExistingFile(id: Long, name: String, description: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = fileRepository.updateFile(
+                fileId = id,
+                newName = name,
+                newDescription = description,
+                newTagIds = emptyList() // Пока без тегов
+            )
+            result.onSuccess {
+                Toast.makeText(requireContext(), "Файл обновлен!", Toast.LENGTH_SHORT).show()
+                findNavController().navigateUp() // Возвращаемся на экран деталей
+            }.onFailure {
+                Toast.makeText(requireContext(), "Ошибка: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun saveNewFile(name: String, description: String) {
         val uri = selectedUri ?: return
 
         viewLifecycleOwner.lifecycleScope.launch {
-            // Repository.addFile сам скопирует файл в приватную папку
             val result = fileRepository.addFile(
                 uri = uri,
                 name = name,
@@ -105,7 +169,7 @@ class FileEditorFragment : Fragment(R.layout.fragment_file_editor) {
             )
 
             result.onSuccess {
-                Toast.makeText(requireContext(), "Файл успешно добавлен!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Файл добавлен!", Toast.LENGTH_SHORT).show()
                 findNavController().navigateUp()
             }.onFailure { error ->
                 Toast.makeText(requireContext(), "Ошибка: ${error.message}", Toast.LENGTH_SHORT).show()
@@ -125,5 +189,28 @@ class FileEditorFragment : Fragment(R.layout.fragment_file_editor) {
             }
         }
         selectedMimeType = requireContext().contentResolver.getType(uri)
+    }
+
+    private fun deleteCurrentFile() {
+        if (editFileId == -1L) return // Нечего удалять, если файл не сохранен
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = fileRepository.deleteFile(editFileId)
+
+            result.onSuccess {
+                Toast.makeText(requireContext(), "Файл удален", Toast.LENGTH_SHORT).show()
+
+                // ВАЖНО: Возвращаемся не на экран деталей (которого больше нет),
+                // а на экран списка файлов.
+                // Используем popBackStack с ID экрана fileDetailFragment, чтобы удалить его из стека
+                findNavController().popBackStack(R.id.filesFragment, false)
+
+                // Если вы хотите вернуться на Главную, используйте:
+                // findNavController().popBackStack(R.id.homeFragment, false)
+
+            }.onFailure { error ->
+                Toast.makeText(requireContext(), "Ошибка: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

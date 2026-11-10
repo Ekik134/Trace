@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.trace.data.local.dao.FileDao
 import com.example.trace.data.local.dao.TagDao
+import com.example.trace.data.local.dao.TagRelationDao
 import com.example.trace.data.local.entity.FileEntity
 import com.example.trace.data.local.entity.TagEntity
 import com.example.trace.data.local.entity.FileTagCrossRef
@@ -26,6 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun fileDao(): FileDao
     abstract fun tagDao(): TagDao
+    abstract fun tagRelationDao(): TagRelationDao
 
     companion object {
         @Volatile

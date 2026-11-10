@@ -171,6 +171,12 @@ class FileRepository(
 
                 // 2. Удаляем из БД (каскадно удалятся связи file_tags)
                 fileDao.deleteFile(file)
+                file.previewPath?.let { previewPath ->
+                    val previewFile = File(previewPath)
+                    if (previewFile.exists()) {
+                        previewFile.delete()
+                    }
+                }
             }
             Result.success(Unit)
         } catch (e: Exception) {

@@ -65,5 +65,11 @@ class FileDetailFragment : Fragment(R.layout.fragment_file_detail) {
         view.findViewById<View>(R.id.btnClose)?.setOnClickListener {
             findNavController().navigateUp()
         }
+
+        view.findViewById<View>(R.id.btnEdit)?.setOnClickListener {
+            // Передаем ID файла на экран редактора
+            val bundle = Bundle().apply { putLong("editFileId", fileId) }
+            findNavController().navigate(R.id.action_fileDetailFragment_to_fileEditorFragment, bundle)
+        }
     }
 }
