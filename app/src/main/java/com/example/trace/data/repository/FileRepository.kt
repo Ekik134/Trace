@@ -21,64 +21,56 @@ import java.util.Date
 import java.util.Locale
 
 class FileRepository(
-    private val context: Context, // Нужен для работы с файловой системой
+    private val context: Context,
     private val fileDao: FileDao,
     private val tagDao: TagDao
 ) {
 
     // --- ПОЛУЧЕНИЕ ДАННЫХ ---
-
-    /**
-     * Получить все файлы в виде Flow для реактивного обновления UI
-     */
+// Возвращает все файлы (с тегами)
     fun getAllFiles(): Flow<List<FileModel>> {
-        return fileDao.getAllFiles().map { entities ->
-            entities.map { it.toModel() }
+        return fileDao.getAllFilesWithTags().map { entities ->
+            entities.map { fileWithTags ->
+                fileWithTags.file.toModel().copy(
+                    tags = fileWithTags.tags.map { TagModel(it.id, it.name, it.iconUri) }
+                )
+            }
         }
     }
 
-    /**
-     * Получить файл с его тегами (для экрана деталей)
-     */
+    fun searchFilesWithTags(query: String): Flow<List<FileModel>> {
+        return fileDao.searchFilesWithTags(query).map { entities ->
+            entities.map { fileWithTags ->
+                fileWithTags.file.toModel().copy(
+                    tags = fileWithTags.tags.map { TagModel(it.id, it.name, it.iconUri) }
+                )
+            }
+        }
+    }
+
     suspend fun getFileWithTags(fileId: Long): FileWithTags? {
         return withContext(Dispatchers.IO) {
             fileDao.getFileWithTags(fileId)
         }
     }
 
-    /**
-     * Поиск файлов по названию
-     */
     fun searchFiles(query: String): Flow<List<FileModel>> {
         return fileDao.searchFiles(query).map { entities ->
             entities.map { it.toModel() }
         }
     }
 
-    /**
-     * Получить файлы, отфильтрованные по конкретному тегу
-     */
     fun getFilesByTag(tagId: Long): Flow<List<FileModel>> {
         return fileDao.getFilesByTag(tagId).map { entities ->
             entities.map { it.toModel() }
         }
     }
 
-    /**
-     * Получить общее количество файлов (для профиля)
-     */
     fun getFilesCount(): Flow<Int> {
         return fileDao.getFilesCount()
     }
 
     // --- СОХРАНЕНИЕ И РЕДАКТИРОВАНИЕ ---
-
-    /**
-     * Добавить новый файл.
-     * 1. Копирует физический файл из галереи/проводника в приватную папку приложения.
-     * 2. Сохраняет метаданные в Room.
-     * 3. Привязывает выбранные теги.
-     */
     suspend fun addFile(
         uri: Uri,
         name: String,
@@ -121,9 +113,6 @@ class FileRepository(
         }
     }
 
-    /**
-     * Обновить информацию о файле (название, описание, теги)
-     */
     suspend fun updateFile(
         fileId: Long,
         newName: String,
@@ -154,9 +143,6 @@ class FileRepository(
         }
     }
 
-    /**
-     * Удалить файл (физически и из БД)
-     */
     suspend fun deleteFile(fileId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val file = fileDao.getFileById(fileId)
@@ -186,10 +172,6 @@ class FileRepository(
 
     // --- ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ---
 
-    /**
-     * Копирует файл из внешнего URI во внутреннюю память приложения.
-     * Возвращает путь к сохраненному файлу.
-     */
     private fun copyFileToInternalStorage(uri: Uri): String? {
         return try {
             val inputStream = context.contentResolver.openInputStream(uri) ?: return null
@@ -215,9 +197,6 @@ class FileRepository(
         return sdf.format(Date())
     }
 
-    /**
-     * Маппинг Entity -> Domain Model (для UI)
-     */
     private fun FileEntity.toModel(): FileModel {
         return FileModel(
             id = this.id,

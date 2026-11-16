@@ -9,6 +9,8 @@ import androidx.recyclerview.widget.RecyclerView
 import coil3.load
 import com.example.trace.R
 import com.example.trace.data.model.FileModel
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import java.io.File
 
 class FileAdapter(
@@ -33,20 +35,40 @@ class FileAdapter(
     override fun getItemCount() = files.size
 
     inner class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // Ищем именно ImageView
         private val ivPreview = itemView.findViewById<ImageView>(R.id.ivFilePreview)
         private val tvName = itemView.findViewById<TextView>(R.id.tvFileName)
+        private val tvMore = itemView.findViewById<TextView>(R.id.tvMore) // <-- Добавлено
+        private val chipGroupTags = itemView.findViewById<ChipGroup>(R.id.chipGroupFileTags)
 
         fun bind(file: FileModel) {
             tvName.text = file.name
 
-            // Загружаем картинку, если это изображение
+            // ВАЖНО: Принудительно показываем "подробнее" для каждого элемента
+            // (RecyclerView переиспользует View, поэтому нужно явно сбрасывать состояние)
+            tvMore.visibility = View.VISIBLE
+
+            // Загрузка картинки
             val imagePath = file.previewPath ?: file.localUri
             if (imagePath != null && file.mimeType?.startsWith("image/") == true) {
                 ivPreview.load(File(imagePath))
             } else {
-                // Ставим иконку-заглушку для PDF или других файлов
                 ivPreview.setImageResource(R.drawable.ic_pdf_miniature)
+            }
+
+            // Отрисовка тегов (максимум 2, чтобы не перегружать карточку)
+            chipGroupTags?.removeAllViews()
+            file.tags.take(2).forEach { tag ->
+                val chip = Chip(itemView.context).apply {
+                    text = tag.name
+                    textSize = 10f
+                    setChipBackgroundColorResource(android.R.color.white)
+                    setChipStrokeColorResource(R.color.green_200)
+                    setChipStrokeWidth(1f)
+                    isClickable = false
+                    isCheckable = false
+                    chipMinHeight = 24f
+                }
+                chipGroupTags?.addView(chip)
             }
 
             itemView.setOnClickListener { onClick(file) }

@@ -16,12 +16,13 @@
         android:layout_height="match_parent"
         android:padding="12dp">
 
-        <!-- Заглушка для иконки тега (в БД есть поле icon_uri) -->
-        <View
+        <!-- Иконка тега (заглушка) -->
+        <ImageView
             android:id="@+id/ivTagIcon"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="#E0E0E0"
+            android:src="@android:drawable/ic_menu_myplaces"
+            app:tint="#B0BEC5"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -32,7 +33,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="природа"
+            android:text="тег"
             android:textAppearance="@style/TextAppearance.Trace.Body"
             android:textSize="16sp"
             android:textStyle="bold"

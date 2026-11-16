@@ -55,4 +55,17 @@ interface FileDao {
         ORDER BY files.createdAt DESC
     """)
     fun getFilesByTag(tagId: Long): Flow<List<FileEntity>>
+
+    @Transaction
+    @Query("SELECT * FROM files ORDER BY createdAt DESC")
+    fun getAllFilesWithTags(): Flow<List<FileWithTags>>
+
+    @Transaction
+    @Query("""
+    SELECT * FROM files 
+    WHERE name LIKE '%' || :query || '%' 
+    ORDER BY createdAt DESC
+""")
+    fun searchFilesWithTags(query: String): Flow<List<FileWithTags>>
 }
+
