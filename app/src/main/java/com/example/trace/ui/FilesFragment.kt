@@ -107,6 +107,17 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
                 }
             }
         }
+        arguments?.getLong("filterTagId")?.let { tagId ->
+            if (tagId != -1L) {
+                // Устанавливаем выбранный тег в ViewModel
+                val currentSelected = viewModel.getSelectedTagIds().toMutableSet()
+                currentSelected.add(tagId)
+                viewModel.onTagsSelected(currentSelected)
+
+                // Обновляем UI (чипсы)
+                updateFilterChips(currentSelected)
+            }
+        }
     }
 
     private fun showFilterSelectionDialog() {

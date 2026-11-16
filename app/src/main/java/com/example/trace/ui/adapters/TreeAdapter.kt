@@ -6,14 +6,14 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.trace.R
-import com.example.trace.ui.TreeNodeModel
+import com.example.trace.ui.viewmodel.TreeNode
 
 class TreeAdapter(
-    private var nodes: List<TreeNodeModel>,
-    private val onClick: (TreeNodeModel) -> Unit
+    private var nodes: List<TreeNode>,
+    private val onClick: (TreeNode) -> Unit
 ) : RecyclerView.Adapter<TreeAdapter.TreeViewHolder>() {
 
-    fun updateData(newNodes: List<TreeNodeModel>) {
+    fun updateData(newNodes: List<TreeNode>) {
         nodes = newNodes
         notifyDataSetChanged()
     }
@@ -26,7 +26,7 @@ class TreeAdapter(
     override fun onBindViewHolder(holder: TreeViewHolder, position: Int) {
         val node = nodes[position]
 
-        // Сдвиг карточки вправо в зависимости от уровня (например, на 32dp)
+        // Сдвиг вправо в зависимости от уровня (например, 32dp на уровень)
         val density = holder.itemView.resources.displayMetrics.density
         val marginStart = (node.level * 32 * density).toInt()
 
@@ -43,7 +43,7 @@ class TreeAdapter(
         private val tvTagName = itemView.findViewById<TextView>(R.id.tvTagName)
         private val tvFileCount = itemView.findViewById<TextView>(R.id.tvFileCount)
 
-        fun bind(node: TreeNodeModel, onClick: (TreeNodeModel) -> Unit) {
+        fun bind(node: TreeNode, onClick: (TreeNode) -> Unit) {
             tvTagName.text = node.name
             tvFileCount.text = "${node.fileCount} файлов"
             itemView.setOnClickListener { onClick(node) }
