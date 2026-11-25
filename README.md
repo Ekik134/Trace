@@ -20,6 +20,7 @@
 ### Сайт проекта
 
 - [Сайт-лендинг](https://trace134.vercel.app/)
+- [Репозиторий с исходными файлами лендинга](https://github.com/Ekik134/trace_landing_for_project)
 
 
 ## Функции
