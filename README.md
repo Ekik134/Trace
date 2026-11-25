@@ -19,7 +19,7 @@
 
 ### Сайт проекта
 
-- [Сайт-лендинг]([https://buildin.ai/share/4ada687a-44ed-47c2-a024-7d3b7b09dd2d?code=H667TD[Buildin.AI]Trace](https://trace134.vercel.app/))
+- [Сайт-лендинг](https://trace134.vercel.app/)
 
 
 ## Функции
