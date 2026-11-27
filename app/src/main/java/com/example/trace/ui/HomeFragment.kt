@@ -32,7 +32,10 @@ class HomeFragment : Fragment() {
     private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             try {
-                requireContext().contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                requireContext().contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
                 val bundle = bundleOf("fileUri" to it.toString())
                 findNavController().navigate(R.id.action_homeFragment_to_fileEditorFragment, bundle)
             } catch (e: SecurityException) {
@@ -52,11 +55,11 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Настройка адаптера для "Недавних"
         val rvRecent = view.findViewById<RecyclerView>(R.id.recentFilesContainer)
+        val etSearch = view.findViewById<EditText>(R.id.etSearch)
 
+        // 1. Настройка адаптера для "Недавних"
         recentFilesAdapter = FileAdapter(emptyList()) { file ->
-            // Переход на экран деталей при клике на карточку
             val bundle = Bundle().apply { putLong("fileId", file.id) }
             findNavController().navigate(R.id.action_homeFragment_to_fileDetailFragment, bundle)
         }
@@ -66,7 +69,7 @@ class HomeFragment : Fragment() {
             adapter = recentFilesAdapter
         }
 
-        // Подписка на данные из ViewModel
+        // 2. Подписка на данные из ViewModel
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.recentFiles.collect { files ->
@@ -75,18 +78,17 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // 2. Кнопка "Добавить файл"
+        // 3. Кнопка "Добавить файл"
         view.findViewById<View>(R.id.btnAddFile).setOnClickListener {
             pickFileLauncher.launch(arrayOf("image/png", "image/jpeg", "image/gif", "application/pdf"))
         }
 
-        // 3. Карточка "Дерево файлов"
+        // 4. Карточка "Дерево файлов"
         view.findViewById<CardView>(R.id.cardTree).setOnClickListener {
             findNavController().navigate(R.id.action_homeFragment_to_treeFragment)
         }
 
-        // 4. Поиск на Главной
-        val etSearch = view.findViewById<EditText>(R.id.etSearch)
+        // 5. Поиск на Главной
         etSearch.doAfterTextChanged { text ->
             val query = text?.toString()?.trim() ?: ""
             if (query.isNotEmpty()) {
