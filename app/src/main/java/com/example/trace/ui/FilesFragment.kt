@@ -35,6 +35,7 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
     private lateinit var chipGroupFilters: ChipGroup
     private var allTags: List<TagEntity> = emptyList()
 
+    // Обработчик выбора файла
     private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             try {
@@ -58,12 +59,11 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
         val btnAddTagFilter = view.findViewById<View>(R.id.btnAddTagFilter)
         chipGroupFilters = view.findViewById(R.id.chipGroupFilters)
 
-        // 1. Загрузка всех тегов для диалога и восстановление чипсов
+        // 1. Загрузка всех тегов для отображения имен
         viewLifecycleOwner.lifecycleScope.launch {
             allTags = AppDatabase.getDatabase(requireContext()).tagDao().getAllTags().first()
 
-            // ВАЖНО: Восстанавливаем визуальные чипсы из ViewModel после загрузки имен тегов
-            // Это решает проблему, когда при возврате с экрана деталей чипсы "исчезают"
+            // Восстанавливаем визуальные чипсы из ViewModel
             updateFilterChips(viewModel.getSelectedTagIds())
         }
 
@@ -78,20 +78,34 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
             adapter = fileAdapter
         }
 
-        // 3. Кнопка "Добавить файл"
+        // 3. Обработка аргументов (откуда пришли)
+        arguments?.let { args ->
+            // Если пришли с поиском с Главной
+            args.getString("searchQuery")?.let { query ->
+                etSearch.setText(query)
+                viewModel.resetFilters() // <--- СБРОС ВСЕХ ФИЛЬТРОВ
+                viewModel.onSearchQueryChanged(query)
+                updateFilterChips(emptySet())
+            }
+
+            // Если пришли из Древа (фильтр по тегу)
+            val filterTagId = args.getLong("filterTagId", -1L)
+            if (filterTagId != -1L) {
+                val currentSelected = viewModel.getSelectedTagIds().toMutableSet()
+                currentSelected.add(filterTagId)
+                viewModel.onTagsSelected(currentSelected)
+                updateFilterChips(currentSelected)
+            }
+        }
+
+        // 4. Кнопка "Добавить файл"
         btnAddFile.setOnClickListener {
             pickFileLauncher.launch(arrayOf("image/png", "image/jpeg", "image/gif", "application/pdf"))
         }
 
-        // 4. Кнопка "Добавить фильтр тегов"
+        // 5. Кнопка "Фильтр тегов"
         btnAddTagFilter.setOnClickListener {
             showFilterSelectionDialog()
-        }
-
-        // 5. Поиск с Главной
-        arguments?.getString("searchQuery")?.let { query ->
-            etSearch.setText(query)
-            viewModel.onSearchQueryChanged(query)
         }
 
         // 6. Ручной поиск
@@ -105,17 +119,6 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
                 viewModel.files.collect { files ->
                     fileAdapter.updateData(files)
                 }
-            }
-        }
-        arguments?.getLong("filterTagId")?.let { tagId ->
-            if (tagId != -1L) {
-                // Устанавливаем выбранный тег в ViewModel
-                val currentSelected = viewModel.getSelectedTagIds().toMutableSet()
-                currentSelected.add(tagId)
-                viewModel.onTagsSelected(currentSelected)
-
-                // Обновляем UI (чипсы)
-                updateFilterChips(currentSelected)
             }
         }
     }

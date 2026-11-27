@@ -21,29 +21,27 @@ class FilesViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getDatabase(application)
     private val repository = FileRepository(application, db.fileDao(), db.tagDao())
 
+    // Состояния
     private val searchQuery = MutableStateFlow("")
     private val selectedTagIds = MutableStateFlow<Set<Long>>(emptySet())
 
+    // Поток файлов
     val files: StateFlow<List<FileModel>> = combine(searchQuery, selectedTagIds) { query, tags ->
         Pair(query, tags)
     }.flatMapLatest { (query, tags) ->
-        // 1. Получаем базовый список (все или по поиску)
         val baseFlow = if (query.isEmpty()) {
             repository.getAllFiles()
         } else {
             repository.searchFilesWithTags(query)
         }
 
-        // 2. Фильтруем по тегам в памяти
         baseFlow.flatMapLatest { files ->
             if (tags.isEmpty()) {
                 flowOf(files)
             } else {
-                flowOf(
-                    files.filter { file ->
-                        file.tags.any { tag -> tags.contains(tag.id) }
-                    }
-                )
+                flowOf(files.filter { file ->
+                    file.tags.any { tag -> tags.contains(tag.id) }
+                })
             }
         }
     }.stateIn(
@@ -52,12 +50,20 @@ class FilesViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = emptyList()
     )
 
+    // --- МЕТОДЫ УПРАВЛЕНИЯ СОСТОЯНИЕМ ---
+
     fun onSearchQueryChanged(query: String) {
         searchQuery.value = query
     }
 
     fun onTagsSelected(tagIds: Set<Long>) {
         selectedTagIds.value = tagIds
+    }
+
+    // Метод для полного сброса фильтров при переходе с Главной
+    fun resetFilters() {
+        searchQuery.value = ""
+        selectedTagIds.value = emptySet()
     }
 
     fun getSelectedTagIds(): Set<Long> = selectedTagIds.value
