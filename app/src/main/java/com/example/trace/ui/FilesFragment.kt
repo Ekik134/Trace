@@ -3,7 +3,11 @@ package com.example.trace.ui
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.View
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -55,6 +59,7 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
 
         val rvFiles = view.findViewById<RecyclerView>(R.id.rvFiles)
         val etSearch = view.findViewById<AppCompatEditText>(R.id.etSearch)
+        val btnSearchAction = view.findViewById<ImageButton>(R.id.btnSearchAction)
         val btnAddFile = view.findViewById<View>(R.id.btnAddFile)
         val btnAddTagFilter = view.findViewById<View>(R.id.btnAddTagFilter)
         chipGroupFilters = view.findViewById(R.id.chipGroupFilters)
@@ -62,8 +67,6 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
         // 1. Загрузка всех тегов для отображения имен
         viewLifecycleOwner.lifecycleScope.launch {
             allTags = AppDatabase.getDatabase(requireContext()).tagDao().getAllTags().first()
-
-            // Восстанавливаем визуальные чипсы из ViewModel
             updateFilterChips(viewModel.getSelectedTagIds())
         }
 
@@ -80,15 +83,13 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
 
         // 3. Обработка аргументов (откуда пришли)
         arguments?.let { args ->
-            // Если пришли с поиском с Главной
             args.getString("searchQuery")?.let { query ->
                 etSearch.setText(query)
-                viewModel.resetFilters() // <--- СБРОС ВСЕХ ФИЛЬТРОВ
+                viewModel.resetFilters()
                 viewModel.onSearchQueryChanged(query)
                 updateFilterChips(emptySet())
             }
 
-            // Если пришли из Древа (фильтр по тегу)
             val filterTagId = args.getLong("filterTagId", -1L)
             if (filterTagId != -1L) {
                 val currentSelected = viewModel.getSelectedTagIds().toMutableSet()
@@ -108,12 +109,37 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
             showFilterSelectionDialog()
         }
 
-        // 6. Ручной поиск
+        // 6. Логика поиска (кнопка и клавиатура)
+        val performSearch = {
+            val query = etSearch.text.toString().trim()
+            if (query.isNotEmpty()) {
+                // Скрываем клавиатуру
+                val imm = requireContext().getSystemService(InputMethodManager::class.java)
+                imm?.hideSoftInputFromWindow(etSearch.windowToken, 0)
+
+                // Обновляем ViewModel
+                viewModel.onSearchQueryChanged(query)
+            }
+        }
+
+        btnSearchAction.setOnClickListener { performSearch() }
+
+        etSearch.setOnEditorActionListener { _, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH ||
+                (event != null && event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)) {
+                performSearch()
+                true
+            } else {
+                false
+            }
+        }
+
+        // 7. Обработка ручного ввода (реактивно)
         etSearch.doAfterTextChanged { text ->
             viewModel.onSearchQueryChanged(text?.toString() ?: "")
         }
 
-        // 7. Подписка на файлы
+        // 8. Подписка на файлы
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.files.collect { files ->

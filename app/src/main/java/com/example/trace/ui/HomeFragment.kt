@@ -3,14 +3,17 @@ package com.example.trace.ui
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageButton
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.cardview.widget.CardView
 import androidx.core.os.bundleOf
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -55,10 +58,12 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val rvRecent = view.findViewById<RecyclerView>(R.id.recentFilesContainer)
         val etSearch = view.findViewById<EditText>(R.id.etSearch)
+        val btnSearchAction = view.findViewById<ImageButton>(R.id.btnSearchAction)
 
         // 1. Настройка адаптера для "Недавних"
+        val rvRecent = view.findViewById<RecyclerView>(R.id.recentFilesContainer)
+
         recentFilesAdapter = FileAdapter(emptyList()) { file ->
             val bundle = Bundle().apply { putLong("fileId", file.id) }
             findNavController().navigate(R.id.action_homeFragment_to_fileDetailFragment, bundle)
@@ -88,13 +93,34 @@ class HomeFragment : Fragment() {
             findNavController().navigate(R.id.action_homeFragment_to_treeFragment)
         }
 
-        // 5. Поиск на Главной
-        etSearch.doAfterTextChanged { text ->
-            val query = text?.toString()?.trim() ?: ""
+        // 5. Логика поиска
+        val performSearch = {
+            val query = etSearch.text.toString().trim()
             if (query.isNotEmpty()) {
+                // Скрываем клавиатуру
+                val imm = requireContext().getSystemService(InputMethodManager::class.java)
+                imm?.hideSoftInputFromWindow(etSearch.windowToken, 0)
+
+                // Переходим на экран файлов
                 val bundle = bundleOf("searchQuery" to query)
                 findNavController().navigate(R.id.action_homeFragment_to_filesFragment, bundle)
+
+                // Очищаем поле
                 etSearch.text?.clear()
+            }
+        }
+
+        // Клик по иконке поиска в поле
+        btnSearchAction.setOnClickListener { performSearch() }
+
+        // Нажатие "Enter" / "Search" на клавиатуре
+        etSearch.setOnEditorActionListener { _, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH ||
+                (event != null && event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)) {
+                performSearch()
+                true
+            } else {
+                false
             }
         }
     }
