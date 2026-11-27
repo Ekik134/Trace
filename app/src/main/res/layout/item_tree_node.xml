@@ -17,12 +17,12 @@
         android:layout_height="wrap_content"
         android:padding="8dp">
 
-        <!-- Иконка/Заглушка -->
-        <View
+        <!-- Иконка тега -->
+        <ImageView
             android:id="@+id/ivTagIcon"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="#E0E0E0"
+            android:scaleType="centerCrop"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />

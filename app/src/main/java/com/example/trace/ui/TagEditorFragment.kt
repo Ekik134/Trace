@@ -1,12 +1,15 @@
 package com.example.trace.ui
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -14,22 +17,42 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import coil3.load
 import com.example.trace.R
 import com.example.trace.data.local.AppDatabase
+import com.example.trace.data.local.FileStorageManager
 import com.example.trace.data.model.TagModel
 import com.example.trace.ui.viewmodel.TagEditorViewModel
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.File
 
 class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
 
     private val viewModel: TagEditorViewModel by viewModels()
     private var editTagId: Long? = null
+    private var selectedIconUri: String? = null // Путь к выбранной иконке
+    private lateinit var fileStorageManager: FileStorageManager
+
+    // Обработчик выбора картинки из галереи
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            // Сохраняем картинку в приватную папку приложения
+            val (localPath, _) = fileStorageManager.saveFileToInternalStorage(it, "image/*")
+            if (localPath != null) {
+                selectedIconUri = localPath
+                // Отображаем выбранную иконку на экране
+                view?.findViewById<ImageView>(R.id.ivTagIcon)?.load(File(localPath))
+            }
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        fileStorageManager = FileStorageManager(requireContext())
 
         val etName = view.findViewById<EditText>(R.id.etName)
         val btnSave = view.findViewById<Button>(R.id.btnSave)
@@ -41,6 +64,12 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
         val btnAddChild = view.findViewById<ImageButton>(R.id.btnAddChild)
         val chipGroupParents = view.findViewById<ChipGroup>(R.id.chipGroupParents)
         val chipGroupChildren = view.findViewById<ChipGroup>(R.id.chipGroupChildren)
+        val ivTagIcon = view.findViewById<ImageView>(R.id.ivTagIcon) // Иконка в редакторе
+
+        // Клик по иконке -> открываем проводник/галерею
+        ivTagIcon.setOnClickListener {
+            pickImageLauncher.launch("image/*")
+        }
 
         editTagId = arguments?.getLong("editTagId", -1L)?.takeIf { it != -1L }
 
@@ -53,11 +82,21 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             btnDelete.visibility = View.GONE
         }
 
-        // Подписка на имя
+        // Подписка на загрузку имени и иконки текущего тега
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.currentTag.collect { tag ->
-                    if (tag != null) etName.setText(tag.name)
+                    if (tag != null) {
+                        etName.setText(tag.name)
+
+                        // Загрузка иконки (если есть)
+                        if (!tag.iconUri.isNullOrBlank()) {
+                            selectedIconUri = tag.iconUri
+                            val ivIcon = view.findViewById<ImageView>(R.id.ivTagIcon)
+                            ivIcon.load(File(tag.iconUri))
+                            ivIcon.clearColorFilter() // <-- Важно
+                        }
+                    }
                 }
             }
         }
@@ -66,7 +105,7 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.parents.collect { parents ->
-                    chipGroupParents.removeAllViews() // Жесткая очистка
+                    chipGroupParents.removeAllViews()
                     parents.forEach { parent ->
                         val chip = createTagChip(parent) {
                             viewModel.removeRelation(parent.id, editTagId!!, editTagId!!)
@@ -81,7 +120,7 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.children.collect { children ->
-                    chipGroupChildren.removeAllViews() // Жесткая очистка
+                    chipGroupChildren.removeAllViews()
                     children.forEach { child ->
                         val chip = createTagChip(child) {
                             viewModel.removeRelation(editTagId!!, child.id, editTagId!!)
@@ -109,15 +148,18 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             showTagSelectionDialog(isForParent = false)
         }
 
+        // Сохранение тега
         btnSave.setOnClickListener {
             val name = etName.text.toString().trim()
             if (name.isEmpty()) {
                 etName.error = "Введите название тега"
                 return@setOnClickListener
             }
-            viewModel.saveTag(editTagId, name)
+            // Передаем имя и путь к иконке
+            viewModel.saveTag(editTagId, name, selectedIconUri)
         }
 
+        // ... (остальные подписки на saveSuccess, errorEvent, deleteSuccess)
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.saveSuccess.collect {
@@ -145,14 +187,11 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
         }
 
         btnDelete.setOnClickListener {
-            // Показываем диалог подтверждения, чтобы не удалить случайно
-            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            AlertDialog.Builder(requireContext())
                 .setTitle("Удалить тег?")
                 .setMessage("Вы уверены? Все связи с этим тегом также будут удалены.")
                 .setPositiveButton("Удалить") { _, _ ->
-                    editTagId?.let { id ->
-                        deleteTagAndClose(id)
-                    }
+                    editTagId?.let { id -> deleteTagAndClose(id) }
                 }
                 .setNegativeButton("Отмена", null)
                 .show()
@@ -162,19 +201,10 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
         btnClose.setOnClickListener { findNavController().navigateUp() }
     }
 
-
     private fun deleteTagAndClose(tagId: Long) {
-        // 1. Подписываемся на событие успешного удаления
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.deleteSuccess.collect {
-                    Toast.makeText(requireContext(), "Тег удален", Toast.LENGTH_SHORT).show()
-                    findNavController().navigateUp()
-                }
-            }
+            viewModel.deleteTag(tagId)
         }
-        // 2. Вызываем удаление во ViewModel
-        viewModel.deleteTag(tagId)
     }
 
     private fun createTagChip(tag: TagModel, onRemove: () -> Unit): Chip {
@@ -193,16 +223,10 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
             val db = AppDatabase.getDatabase(requireContext())
             val allTags = db.tagDao().getAllTags().first()
 
-            // Получаем ID тегов, которые уже есть в связях (и в родителях, и в детях)
             val currentParents = viewModel.parents.value.map { it.id }
             val currentChildren = viewModel.children.value.map { it.id }
-
-            // Объединяем их в один список, чтобы исключить из выбора
             val allRelatedIds = (currentParents + currentChildren).toSet()
 
-            // Фильтруем:
-            // 1. Исключаем себя (editTagId)
-            // 2. Исключаем теги, которые уже есть в ЛЮБОЙ из связей (чтобы не было дублей в разных категориях)
             val availableTags = allTags.filter { tag ->
                 tag.id != editTagId && tag.id !in allRelatedIds
             }
@@ -219,10 +243,8 @@ class TagEditorFragment : Fragment(R.layout.fragment_tag_editor) {
                 .setItems(names) { _, which ->
                     val selectedTag = availableTags[which]
                     if (isForParent) {
-                        // Если добавляем в Родители (Входит в)
                         viewModel.addParentRelation(parentId = selectedTag.id, childId = editTagId!!)
                     } else {
-                        // Если добавляем в Дети (Включает в себя)
                         viewModel.addChildRelation(parentId = editTagId!!, childId = selectedTag.id)
                     }
                 }

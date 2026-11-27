@@ -16,7 +16,8 @@ data class TreeNode(
     val id: Long,
     val name: String,
     val fileCount: Int,
-    val level: Int // 0 - корень, 1 - ребенок и т.д.
+    val level: Int,
+    val iconUri: String? = null
 )
 
 class TreeViewModel(application: Application) : AndroidViewModel(application) {
@@ -57,7 +58,8 @@ class TreeViewModel(application: Application) : AndroidViewModel(application) {
                         id = childTag.id,
                         name = childTag.name,
                         fileCount = fileCounts[childTag.id] ?: 0,
-                        level = level
+                        level = level,
+                        iconUri = childTag.iconUri
                     )
                 )
                 addChildren(childTag.id, level + 1)
@@ -71,7 +73,8 @@ class TreeViewModel(application: Application) : AndroidViewModel(application) {
                     id = root.id,
                     name = root.name,
                     fileCount = fileCounts[root.id] ?: 0,
-                    level = 0
+                    level = 0,
+                    iconUri = root.iconUri
                 )
             )
             addChildren(root.id, 1)

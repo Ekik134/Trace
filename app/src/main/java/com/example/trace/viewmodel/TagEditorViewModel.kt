@@ -52,12 +52,14 @@ class TagEditorViewModel(application: Application) : AndroidViewModel(applicatio
         _children.value = repository.getChildrenOf(tagId)
     }
 
-    fun saveTag(tagId: Long?, name: String) {
+    fun saveTag(tagId: Long?, name: String, iconUri: String?) {
         viewModelScope.launch {
             if (tagId == null) {
-                repository.createTag(name)
+                // Создание нового тега (передаем iconUri)
+                repository.createTag(name, iconUri)
             } else {
-                repository.updateTag(TagModel(id = tagId, name = name, iconUri = null))
+                // Обновление существующего
+                repository.updateTag(TagModel(id = tagId, name = name, iconUri = iconUri))
             }
             _saveSuccess.emit(Unit)
         }

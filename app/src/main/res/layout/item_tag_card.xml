@@ -16,13 +16,12 @@
         android:layout_height="match_parent"
         android:padding="12dp">
 
-        <!-- Иконка тега (заглушка) -->
+        <!-- Иконка тега -->
         <ImageView
             android:id="@+id/ivTagIcon"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_myplaces"
-            app:tint="#B0BEC5"
+            android:scaleType="fitCenter"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
